@@ -1,24 +1,43 @@
-from flask import Flask, render_template, request
+from __future__ import annotations
+
+from flask import Flask, render_template_string, request
 
 app = Flask(__name__)
 
-@app.route('/')
+
+PAGE = """
+<!doctype html>
+<html lang="en">
+  <head><meta charset="utf-8"><title>Docker Greeting</title></head>
+  <body>
+    <main>
+      <h1>Docker Greeting</h1>
+      <form action="/greet" method="post">
+        <label for="username">Your name</label>
+        <input id="username" name="username" required maxlength="80">
+        <button type="submit">Greet me</button>
+      </form>
+      {% if message %}<p role="status">{{ message }}</p>{% endif %}
+    </main>
+  </body>
+</html>
+"""
+
+
+@app.get("/")
 def index():
-    return '''
-        <html>
-        <body>
-            <form action="/greet" method="POST">
-                Enter your name: <input type="text" name="username">
-                <input type="submit" value="Submit">
-            </form>
-        </body>
-        </html>
-    '''
+    return render_template_string(PAGE, message="")
 
-@app.route('/greet', methods=['POST'])
+
+@app.post("/greet")
 def greet():
-    user_input = request.form['username']
-    return f"Hello {user_input}, Welcome to this app for Docker demonstration. Please consider like and subscribe to the channel."
+    username = request.form.get("username", "").strip()
+    if not username:
+        return render_template_string(PAGE, message="Please enter your name."), 400
+    if len(username) > 80:
+        return render_template_string(PAGE, message="Name must be 80 characters or fewer."), 400
+    return render_template_string(PAGE, message=f"Hello {username}, welcome to the Docker demo!")
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
